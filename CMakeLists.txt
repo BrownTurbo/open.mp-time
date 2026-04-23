@@ -36,11 +36,10 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/date)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/date/include)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn-natives)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn-natives)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives)
 target_include_directories(omp-time PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn-natives>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives>
     $<INSTALL_INTERFACE:pawn-natives>
 )
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn/source)

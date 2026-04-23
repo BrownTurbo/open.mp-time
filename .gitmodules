@@ -12,7 +12,7 @@
 	url = https://github.com/openmultiplayer/open.mp-sdk.git
 [submodule "omp-natives"]
 	path = lib/omp-natives
-	url = https://github.com/openmultiplayer/pawn-template.git
+	url = https://github.com/openmultiplayer/pawn-natives.git
 [submodule "sampgdk"]
 	path = lib/sampgdk
 	url = https://github.com/Just-Archives/sampgdk.git
