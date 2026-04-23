@@ -7,3 +7,15 @@
 [submodule "lib/date"]
 	path = lib/date
 	url = https://github.com/HowardHinnant/date
+[submodule "omp-sdk"]
+	path = lib/omp-sdk
+	url = https://github.com/openmultiplayer/open.mp-sdk.git
+[submodule "omp-natives"]
+	path = lib/omp-natives
+	url = https://github.com/openmultiplayer/pawn-template.git
+[submodule "sampgdk"]
+	path = lib/sampgdk
+	url = https://github.com/Just-Archives/sampgdk.git
+[submodule "date"]
+	path = lib/date
+	url = https://github.com/HowardHinnant/date.git

@@ -19,5 +19,19 @@
         "system_error": "cpp",
         "ctime": "cpp",
         "xlocale": "cpp"
-    }
+    },
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.default.compilerPath": "M:/Installations/Visual Studio 2026 Build Tools/VC/Tools/MSVC/14.50.35717/bin/Hostx64/x86/cl.exe",
+    "cmake.generator": "Visual Studio 18 2026",
+    "cmake.configureArgs": [
+        "-A", "Win32",
+        "-DCMAKE_TOOLCHAIN_FILE=M:/Installations/vcpkg/scripts/buildsystems/vcpkg.cmake",
+        "-DVCPKG_TARGET_TRIPLET=x86-windows",
+        "-DCMAKE_POLICY_VERSION_MINIMUM=3.5"
+    ],
+    "cmake.buildDirectory": "${workspaceFolder}/build",
+    "cmake.buildArgs": [
+        "--config", "RelWithDebInfo"
+    ],
+    "cmake.saveBeforeBuild": true
 }

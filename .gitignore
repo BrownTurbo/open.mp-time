@@ -48,3 +48,8 @@ build/
 .vs/
 *.so
 *.o
+
+# ...
+vcpkg_installed/
+.idea/
+~.tst/

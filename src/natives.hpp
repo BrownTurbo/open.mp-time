@@ -6,17 +6,14 @@
 #include <date/date.h>
 #include <map>
 #include <string>
+#include <memory>
+
+#include "../lib/ntp/NTPClient.h"
+#include "../lib/ntp/UDP/UDP.h"
+
+#include <Server/Components/Pawn/pawn.hpp>
+#include <Server/Components/Pawn/Impl/pawn_natives.hpp>
+
 namespace chrono = std::chrono;
-
-#include <amx/amx2.h>
-
-#include "common.hpp"
-
-namespace Natives {
-cell Now(AMX* amx, cell* params);
-cell TimeFormat(AMX* amx, cell* params);
-cell TimeParse(AMX* amx, cell* params);
-cell DurationParse(AMX* amx, cell* params);
-}
 
 #endif

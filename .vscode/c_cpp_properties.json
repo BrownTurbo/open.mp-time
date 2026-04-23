@@ -53,14 +53,14 @@
         {
             "name": "Win32",
             "includePath": [
-                "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include",
-                "${workspaceRoot}"
+                "${workspaceRoot}/src/**",
+                "${workspaceFolder}/lib/**"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE"
             ],
-            "intelliSenseMode": "msvc-x64",
+            "intelliSenseMode": "windows-gcc-x86",
             "browse": {
                 "path": [
                     "C:/Program Files (x86)/Microsoft Visual Studio 14.0/VC/include/*",
@@ -70,7 +70,9 @@
                 "databaseFilename": ""
             },
             "cStandard": "c11",
-            "cppStandard": "c++17"
+            "cppStandard": "c++17",
+            "compilerPath": "m:\\Installations\\Visual Studio 2026 Build Tools\\MSBuild\\Current\\Bin\\MSBuild.exe",
+            "configurationProvider": "ms-vscode.cmake-tools"
         }
     ],
     "version": 4
