@@ -29,6 +29,8 @@ public:
     UDPSocket();
     ~UDPSocket();
 
+    void cleanupSockets();
+
     bool begin(uint16_t port);
     void stop();
 
@@ -45,3 +47,6 @@ public:
     void setNonBlocking(bool enable);
 	void setTimeout(int milliseconds);
 };
+
+void initSockets();
+void cleanupSockets();

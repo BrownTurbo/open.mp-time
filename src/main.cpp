@@ -1,176 +1,105 @@
-#include <Server/Components/Pawn/pawn.hpp>
-#include <Server/Components/Pawn/Impl/pawn_natives.hpp>
-#include <Server/Components/Pawn/Impl/pawn_impl.hpp>
+#include "./main.hpp"
 
-#include "../lib/ntp/NTPClient.h"
-#include "../lib/ntp/UDP/UDP.h"
-
-#include "natives.hpp"
-
-struct OMPTime;
-OMPTime* OMPTime = nullptr;
-
-struct IPawnExtension : IExtension
+StringView OMPTime::componentName() const
 {
-    PROVIDE_EXT_UID(0xB92A8CF204F9CF02);
+    return "OMP-Time";
+}
 
-    virtual void setData(int value) = 0;
-};
-
-class PawnExtension final : public IPawnExtension
+SemanticVersion OMPTime::componentVersion() const
 {
-private:
-    int data_ = 0;
+    return SemanticVersion(1, 1, 2, 0);
+}
 
-public:
-    void setData(int value) override
-    {v
-        data_ = value;
-    }
-
-    int getData() const
-    {
-        return data_;
-    }
-
-    // Implement the core of the extensions API.
-    void freeExtension() override
-    {
-        delete this;
-    }
-
-    void reset() override
-    {
-        data_ = 0;
-    }
-};
-
-class PawnTemplate final : public IComponent, public PawnEventHandler, public PlayerConnectEventHandler
+void OMPTime::onLoad(ICore* c)
 {
-private:
-    ICore* core = nullptr;
-    IPawnComponent* pawnComponent;
+    getCore() = core = c;
+}
 
-private:
-    PROVIDE_UID(0x55347878BAA3C18A);
+void OMPTime::onInit(IComponentList* components)
+{
+    get() = this;
+    pawnComponent = components->queryComponent<IPawnComponent>();
 
-    StringView componentName() const override
-    {
-        return "OMP-Time";
+    if (pawnComponent == nullptr) {
+        StringView name = componentName();
+        core->logLn(
+            LogLevel::Error,
+            "Error loading component %.*s: Pawn component not loaded",
+            name.length(),
+            name.data());
+        return;
     }
 
-    SemanticVersion componentVersion() const override
+    setAmxFunctions(pawnComponent->getAmxFunctions());
+    setAmxLookups(components);
+    pawnComponent->getEventDispatcher().addEventHandler(this);
+}
+
+void OMPTime::onAmxLoad(IPawnScript& script)
+{
+    pawn_natives::AmxLoad(script.GetAMX());
+}
+
+void OMPTime::onAmxUnload(IPawnScript& script)
+{
+    if (ntpClient)
     {
-        return SemanticVersion(1, 1, 2 0);
+        ntpClient->end();
     }
-
-    void onLoad(ICore* c) override
+    if (udpSocket)
     {
-        core = c;
+        udpSocket->stop();
     }
+    udpSocket->cleanupSockets();
+    ClientInitialised = false;
+}
 
-    void onInit(IComponentList* components) override
+void OMPTime::onFree(IComponent* component)
+{
+    if (component == pawnComponent)
     {
-        pawnComponent = components->queryComponent<IPawnComponent>();
-
-        if (pawnComponent == nullptr) {
-            StringView name = componentName();
-            core->logLn(
-                LogLevel::Error,
-                "Error loading component %.*s: Pawn component not loaded",
-                name.length(),
-                name.data());
-            return;
-        }
-
-        setAmxFunctions(pawnComponent->getAmxFunctions());
-        setAmxLookups(components);
-        pawnComponent->getEventDispatcher().addEventHandler(this);
+        pawnComponent = nullptr;
+        setAmxFunctions();
+        setAmxLookups();
     }
+}
 
-    void onReady() override { }
-
-	~OMPTime()
-	{
-		if (pawnComponent)
-		{
-			pawnComponent->getEventDispatcher().removeEventHandler(this);
-		}
-		if (core)
-		{
-			core->getPlayers().getPlayerConnectDispatcher().removeEventHandler(this);
-		}
-	}
-
-    void onAmxLoad(IPawnScript& script) override
+void OMPTime::onTick(Microseconds elapsed, TimePoint now)
+{
+    if (ClientInitialised && ntpClient)
     {
-        pawnComponentnatives::AmxLoad(script.GetAMX());
+        ntpClient->update();
     }
+}
 
-    void onAmxUnload(IPawnScript& script) override
-    {
-        if (NTPClient)
-        {
-            NTPClient->end();
-            NTPClient.reset();
-        }
-        if (UDPSocket)
-        {
-            UDPSocket->stop();
-            UDPSocket.reset();
-        }
-        CleanupSockets();
-        ClientInitialised = false;
-    }
+void OMPTime::free()
+{
+    if (pawnComponent != nullptr)
+        pawnComponent->getEventDispatcher().removeEventHandler(this);
 
-    void onFree(IComponent* component) override
-    {
-		if (component == pawnComponent)
-		{
-			pawnComponent = nullptr;
-			setAmxFunctions();
-			setAmxLookups();
-		}
-    }
+    delete this;
+}
 
-    void onTick(Microseconds elapsed, TimePoint now) override
-    {
-        if (ClientInitialised && NTPClient)
-        {
-            NTPClient->update();
-        }
-    }
+void OMPTime::reset()
+{
+    // Nothing to reset for now.
+}
 
-    void free() override
-    {
-        if (pawnComponent != nullptr)
-            pawnComponent->getEventDispatcher().removeEventHandler(this);
+ICore *&OMPTime::getCore()
+{
+    static ICore *core{};
 
-        delete this;
-    }
+    return core;
+}
 
-    void reset() override
-    {
-        // Nothing to reset for now.
-    }
+OMPTime *&OMPTime::get()
+{
+    static OMPTime *component{};
 
-    ICore *&getCore()
-    {
-        static ICore *core{};
-
-        return core;
-    }
-
-    OMPTime *&get()
-    {
-        static OMPTime *component{};
-
-        return component;
-    }
-};
+    return component;
+}
 
 COMPONENT_ENTRY_POINT()
 {
-    OMPTime = new OMPTime();
-    return OMPTime;
+    return new OMPTime();
 }

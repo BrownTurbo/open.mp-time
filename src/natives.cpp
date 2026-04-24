@@ -13,27 +13,20 @@ SCRIPT_API(Now, int())
     return static_cast<int>(std::chrono::seconds(std::time(NULL)).count());
 }
 
-SCRIPT_API(TimeFormat, ())
+SCRIPT_API(TimeFormat, int(int unix_timestamp, std::string fmt, cell* output, int outputSize))
 {
-    int unix_timestamp = static_cast<int>(params[1]);
-    std::string fmt = amx_GetCppString(amx, params[2]);
-
-    date::sys_seconds since_epoch(chrono::seconds{ unix_timestamp });
+    date::sys_seconds since_epoch(std::chrono::seconds{ unix_timestamp });
 
     std::ostringstream os;
     date::to_stream(os, fmt.c_str(), since_epoch);
-    std::string output(os.str());
 
-    return amx_SetCppString(amx, params[3], output, params[4]);
+    std::string result = os.str();
+
+    return amx_SetString(output, result.c_str(), 0, 0, outputSize);
 }
 
-SCRIPT_API(TimeParse, ())
+SCRIPT_API(TimeParse, int(std::string string, std::string fmt, cell* output))
 {
-    std::string string = amx_GetCppString(amx, params[1]);
-    std::string fmt = amx_GetCppString(amx, params[2]);
-    cell* output;
-    amx_GetAddr(amx, params[3], &output);
-
     std::istringstream is(string);
     date::sys_seconds d;
 
@@ -42,7 +35,11 @@ SCRIPT_API(TimeParse, ())
 			return 1;
 		}
 	} catch (std::exception& e) {
-		core->logLn(LogLevel::Error, "ERROR: date::from_stream failed: %s", e.what());
+        ICore *core = OMPTime::getCore();
+        if (core)
+        {
+            core->logLn(LogLevel::Error, "ERROR: date::from_stream failed: %s", e.what());
+        }
 		return 1;
 	}
 
@@ -51,11 +48,7 @@ SCRIPT_API(TimeParse, ())
     return 0;
 }
 
-SCRIPT_API(DurationParse, ()) {
-    std::string input = amx_GetCppString(amx, params[1]);
-    cell* output;
-    amx_GetAddr(amx, params[2], &output);
-
+SCRIPT_API(DurationParse, int(std::string input, cell* output)) {
     size_t idx = 0,
            length = input.length();
 
@@ -134,76 +127,70 @@ SCRIPT_API(DurationParse, ()) {
 }
 
 // native NTP_Init(const server[] = "pool.ntp.org", port = 123);
-SCRIPT_API(NTP_Init, ()) {
-    if (ClientInitialised) {
+SCRIPT_API(NTP_Init, int(char* server, unsigned int port)) {
+    ICore *core = OMPTime::getCore();
+    if (!core)
+    {
+        return 0;
+    }
+    if (ClientInitialised)
+    {
         core->logLn(LogLevel::Debug, "NTP plugin: already initialised.");
         return 1;
     }
 
-    // Get parameters: server name, port
-    char serverName[256];
-    amx_GetString(serverName, params[1], 0, sizeof(serverName));
-    uint16_t port = static_cast<uint16_t>(params[2]);
-
     // Create UDP socket and NTP client
-    InitSockets();
-    UDPSocket = std::make_unique<UDPSocket>();
-    if (!UDPSocket->begin(0)) {   // bind to any free port
+    initSockets();
+    udpSocket = std::make_unique<UDPSocket>();
+    if (!udpSocket->begin(0)) {   // bind to any free port
         core->logLn(LogLevel::Debug, "NTP plugin: UDP socket creation failed.");
         return 0;
     }
-    UDPSocket->setTimeout(100);   // 100 ms recv timeout
+    udpSocket->setTimeout(100);   // 100 ms recv timeout
 
-    NTPClient = std::make_unique<NTPClient>(*UDPSocket, serverName);
-    NTPClient->begin();
+    ntpClient = std::make_unique<NTPClient>(*udpSocket, server);
+    ntpClient->begin();
 
-    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", serverName, port);
+    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", server, port);
     ClientInitialised = true;
     return 1;
 }
 
 // native NTP_Update();  // Called from ProcessTick, but also exposed to scripts
-SCRIPT_API(NTP_Update, ()) {
-    if (!ClientInitialised || !NTPClient) return 0;
-    return NTPClient->update() ? 1 : 0;
+SCRIPT_API(NTP_Update, bool()) {
+    if (!ClientInitialised || !ntpClient) return 0;
+    return ntpClient->update() ? 1 : 0;
 }
 
 // native NTP_ForceUpdate();
-SCRIPT_API(NTP_ForceUpdate, ()) {
-    if (!ClientInitialised || !NTPClient) return 0;
-    return NTPClient->forceUpdate() ? 1 : 0;
+SCRIPT_API(NTP_ForceUpdate, bool()) {
+    if (!ClientInitialised || !ntpClient) return 0;
+    return ntpClient->forceUpdate() ? 1 : 0;
 }
 
 // native NTP_IsSynced();
-SCRIPT_API(NTP_IsSynced, ()) {
-    if (!ClientInitialised || !NTPClient) return 0;
-    return NTPClient->isTimeSet() ? 1 : 0;
+SCRIPT_API(NTP_IsSynced, bool()) {
+    if (!ClientInitialised || !ntpClient) return 0;
+    return ntpClient->isTimeSet() ? 1 : 0;
 }
 
 // native NTP_GetTime(&hour, &minute, &second);
-SCRIPT_API(NTP_GetTime, ()) {
-    if (!ClientInitialised || !NTPClient || !NTPClient->isTimeSet()) {
+SCRIPT_API(NTP_GetTime, bool(int& hour, int& minute, int& second)) {
+    if (!ClientInitialised || !ntpClient || !ntpClient->isTimeSet()) {
         return 0;
     }
 
-    cell *hour   = nullptr;
-    cell *minute = nullptr;
-    cell *second = nullptr;
-    amx_GetAddr(amx, params[1], &hour);
-    amx_GetAddr(amx, params[2], &minute);
-    amx_GetAddr(amx, params[3], &second);
-
-    *hour   = NTPClient->getHours();
-    *minute = NTPClient->getMinutes();
-    *second = NTPClient->getSeconds();
+    hour   = ntpClient->getHours();
+    minute = ntpClient->getMinutes();
+    second = ntpClient->getSeconds();
 
     return 1;
 }
 
 // native NTP_SetOffset(offset);
-SCRIPT_API(NTP_SetOffset, ())
+SCRIPT_API(NTP_SetOffset, bool(int offset))
 {
-    if (!ClientInitialised || !NTPClient) return 0;
-    NTPClient->setTimeOffset(params[1]);
+    if (!ClientInitialised || !ntpClient) return 0;
+    ntpClient->setTimeOffset(offset);
     return 1;
 }
