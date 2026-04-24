@@ -11,7 +11,7 @@
 	path = lib/omp-sdk
 	url = https://github.com/openmultiplayer/open.mp-sdk.git
 [submodule "omp-natives"]
-	path = lib/omp-natives
+	path = lib/pawn-natives
 	url = https://github.com/openmultiplayer/pawn-natives.git
 [submodule "sampgdk"]
 	path = lib/sampgdk

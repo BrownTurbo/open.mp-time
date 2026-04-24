@@ -36,18 +36,42 @@ endif()
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/date)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/date/include)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives)
 target_include_directories(omp-time PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives>
     $<INSTALL_INTERFACE:pawn-natives>
 )
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn/source)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives/pawn/source)
 if(DEFINED UNIX)
-    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/pawn/source/linux)
+    include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/pawn-natives/pawn/source/linux)
 endif()
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/sdk)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-natives/sdk/include)
+file(GLOB AMX_SRC "${CMAKE_CURRENT_SOURCE_DIR}/lib/amx/*.c")
+if(DEFINED UNIX)
+    file(GLOB AMXL_SRC "${CMAKE_CURRENT_SOURCE_DIR}/lib/amx/linux/*.c")
+endif()
+file(GLOB AMX_HDR "${CMAKE_CURRENT_SOURCE_DIR}/lib/amx/*.h")
+if(DEFINED UNIX)
+    file(GLOB AMXL_HDR "${CMAKE_CURRENT_SOURCE_DIR}/lib/amx/linux/*.h")
+endif()
+add_library(AMX ${AMX_SRC} ${AMXL_SRC} ${AMX_HDR} ${AMXL_HDR})
+set_target_properties(AMX PROPERTIES LINKER_LANGUAGE CXX)
+if(DEFINED UNIX)
+    target_compile_options(AMX PRIVATE -m32)
+    target_link_options(AMX PRIVATE -m32)
+endif()
+target_include_directories(AMX
+        INTERFACE
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/lib/amx>
+        $<INSTALL_INTERFACE:amx>
+)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-sdk)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-sdk/include)
+target_link_libraries(OMP-SDK INTERFACE
+    AMX
+    pawn-natives
+)
 
 file(GLOB NTP_SRC "${CMAKE_SOURCE_DIR}/lib/ntp/*.cpp")
 file(GLOB UDP_SRC "${CMAKE_SOURCE_DIR}/lib/ntp/UDP/*.cpp")
@@ -63,6 +87,7 @@ endif()
 target_link_libraries(omp-time PRIVATE
 	OMP-SDK
 	NTP
+	AMX
 )
 
 target_compile_definitions(omp-time PRIVATE
