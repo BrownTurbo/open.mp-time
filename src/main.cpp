@@ -49,8 +49,8 @@ void OMPTime::onAmxUnload(IPawnScript& script)
     if (udpSocket)
     {
         udpSocket->stop();
+        udpSocket->cleanupSockets();
     }
-    udpSocket->cleanupSockets();
     ClientInitialised = false;
 }
 

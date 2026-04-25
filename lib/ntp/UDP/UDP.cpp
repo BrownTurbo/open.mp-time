@@ -32,6 +32,10 @@ UDPSocket::~UDPSocket() {
 }
 
 bool UDPSocket::begin(uint16_t port) {
+    if (_socket != INVALID_SOCKET) {
+        stop();
+    }
+
     _socket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (_socket == INVALID_SOCKET) return false;
 
@@ -102,10 +106,10 @@ size_t UDPSocket::write(const uint8_t* buffer, size_t size) {
 
 int UDPSocket::parsePacket() {
     // Check if data is available using recv with MSG_PEEK
-    char dummy;
+    char peek;
     struct sockaddr_in from;
     socklen_t fromLen = sizeof(from);
-    int result = recvfrom(_socket, &dummy, 1, MSG_PEEK, (struct sockaddr*)&from, &fromLen);
+    int result = recvfrom(_socket, &peek, 128, MSG_PEEK, reinterpret_cast<struct sockaddr*>(&from), &fromLen);
 
     if (result > 0) return result;
     return 0;

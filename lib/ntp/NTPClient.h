@@ -48,94 +48,83 @@ class NTPClient {
 
     void          sendNTPPacket();
 
-    unsigned int NTPport = 123;
+    unsigned int _NTPport = 123;
 
   public:
-    NTPClient(UDP& udp);
-    NTPClient(UDP& udp, long timeOffset);
-    NTPClient(UDP& udp, const char* poolServerName);
-    NTPClient(UDP& udp, const char* poolServerName, long timeOffset);
-    NTPClient(UDP& udp, const char* poolServerName, long timeOffset, unsigned long updateInterval);
-    NTPClient(UDP& udp, IPAddress poolServerIP);
-    NTPClient(UDP& udp, IPAddress poolServerIP, long timeOffset);
-    NTPClient(UDP& udp, IPAddress poolServerIP, long timeOffset, unsigned long updateInterval);
+    explicit NTPClient(UDP &udp);
+    NTPClient(UDP &udp, long timeOffset);
+    NTPClient(UDP &udp, const char *poolServerName);
+    NTPClient(UDP &udp, const char *poolServerName, long timeOffset);
+    NTPClient(UDP &udp, const char *poolServerName, long timeOffset, unsigned long updateInterval);
+    NTPClient(UDP &udp, const char *poolServerName, unsigned int port);
+    NTPClient(UDP &udp, const char *poolServerName, unsigned int port, long timeOffset);
+    NTPClient(UDP &udp, const char *poolServerName, unsigned int port, long timeOffset, unsigned long updateInterval);
+    NTPClient(UDP &udp, IPAddress poolServerIP);
+    NTPClient(UDP &udp, IPAddress poolServerIP, long timeOffset);
+    NTPClient(UDP &udp, IPAddress poolServerIP, long timeOffset, unsigned long updateInterval);
+    NTPClient(UDP &udp, IPAddress poolServerIP, unsigned int port);
+    NTPClient(UDP &udp, IPAddress poolServerIP, unsigned int port, long timeOffset);
+    NTPClient(UDP &udp, IPAddress poolServerIP, unsigned int port, long timeOffset, unsigned long updateInterval);
 
     /**
-     * Set time server name
-     *
-     * @param poolServerName
-     */
-    void setPoolServerName(const char* poolServerName);
-
-     /**
-     * Set random local port
-     */
-    void setRandomPort(unsigned int minValue = 49152, unsigned int maxValue = 65535);
-
-    /**
-     * Starts the underlying UDP client with the default local port
+     * Starts the underlying UDP client on the default local port.
+     * Will not re-bind if the socket was already set up externally.
      */
     void begin();
 
     /**
-     * Starts the underlying UDP client with the specified local port
+     * Starts the underlying UDP client on the given local port.
+     * Will not re-bind if the socket was already set up externally.
      */
     void begin(unsigned int port);
 
     /**
-     * This should be called in the main loop of your application. By default an update from the NTP Server is only
-     * made every 60 seconds. This can be configured in the NTPClient constructor.
-     *
-     * @return true on success, false on failure
+     * Stops the underlying UDP client.
+     */
+    void end();
+
+    /**
+     * Non-blocking update — call from the main server tick.
+     * Returns true only when a fresh timestamp has just been received.
      */
     bool update();
 
-    // ...
+    /**
+     * Triggers an immediate NTP request (non-blocking; response arrives later).
+     */
     void requestUpdate();
 
     /**
-     * This will force the update from the NTP Server.
-     *
-     * @return true on success, false on failure
+     * Blocking update — waits up to 1 s for a response.
+     * Avoid in the server tick; use update() instead.
      */
     bool forceUpdate();
 
     /**
-     * This allows to check if the NTPClient successfully received a NTP packet and set the time.
-     *
-     * @return true if time has been set, else false
+     * Returns true once at least one successful sync has occurred.
      */
     bool isTimeSet() const;
 
+    // ...
     int getDay() const;
     int getHours() const;
     int getMinutes() const;
     int getSeconds() const;
 
-    /**
-     * Changes the time offset. Useful for changing timezones dynamically
-     */
-    void setTimeOffset(int timeOffset);
-
-    /**
-     * Set the update interval to another frequency. E.g. useful when the
-     * timeOffset should not be set in the constructor
-     */
-    void setUpdateInterval(unsigned long updateInterval);
-
-    /**
-     * @return time formatted like `hh:mm:ss`
-     */
-    std::string getFormattedTime() const;
-
-    /**
-     * @return time in seconds since Jan. 1, 1970
-     */
+    /** @return time in seconds since Jan. 1, 1970 */
     unsigned long getEpochTime() const;
 
-    /**
-     * Stops the underlying UDP client
-     */
-    void end();
+    /** @return time formatted as "hh:mm:ss" */
+    std::string getFormattedTime() const;
+
+    // ...
+    void setPoolServerName(const char *poolServerName);
+    void setPoolServerIP(IPAddress poolServerIP);
+    void setPoolServerPort(unsigned int port);
+    void setTimeOffset(int timeOffset);
+    void setUpdateInterval(unsigned long updateInterval);
+
+    /** Pick a random local bind port in [minValue, maxValue]. */
+    void setRandomPort(unsigned int minValue = 49152, unsigned int maxValue = 65535);
 };
 #endif

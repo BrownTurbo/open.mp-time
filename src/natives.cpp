@@ -169,15 +169,10 @@ SCRIPT_API(NTP_Init, int(const std::string &NTPserver, int port))
 
     // Create UDP socket and NTP client
     udpSocket = std::make_unique<UDPSocket>();
-    if (!udpSocket->begin(0))
-    { // bind to any free port
-        core->logLn(LogLevel::Debug, "NTP plugin: UDP socket creation failed.");
-        return 0;
-    }
     udpSocket->setNonBlocking(true);
     udpSocket->setTimeout(500);
 
-    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str(), port);
+    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str(), static_cast<unsigned int>(port));
     ntpClient->begin();
 
     core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", NTPserver.c_str(), port);

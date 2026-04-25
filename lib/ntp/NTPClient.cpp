@@ -111,8 +111,14 @@ void NTPClient::begin() {
 void NTPClient::begin(unsigned int port) {
   this->_port = port;
 
-  this->_udp->begin(this->_port);
-  this->_udp->setTimeout(100);
+  if (!_udpSetup)
+  {
+    if (!_udp->begin(static_cast<uint16_t>(_port)))
+    {
+      return;
+    }
+    _udp->setTimeout(100);
+  }
 
   this->_udpSetup = true;
 }
@@ -130,7 +136,7 @@ bool NTPClient::forceUpdate() {
   while (this->_udp->parsePacket() == 0)
   {
     elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count();
-    if (elapsed > 1000)
+    if (elapsed > 2000)
       return false;            // timeout
     std::this_thread::yield(); // give other threads CPU time
   }
@@ -166,7 +172,7 @@ bool NTPClient::update() {
     if (this->_state == NTPState::WAITING_FOR_RESPONSE) {
         int cb = this->_udp->parsePacket();
 
-        if (cb >= NTP_PACKET_SIZE) {
+        if (cb > 0) {
             // Packet arrived! Process it.
             this->_udp->read(this->_packetBuffer, NTP_PACKET_SIZE);
 
