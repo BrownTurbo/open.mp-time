@@ -11,6 +11,8 @@
 #include "../lib/ntp/NTPClient.h"
 #include "../lib/ntp/UDP/UDP.h"
 
+#include <Server/Components/Pawn/Impl/pawn_natives.hpp>
+
 namespace chrono = std::chrono;
 
 extern bool ClientInitialised;

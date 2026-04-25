@@ -1,8 +1,10 @@
 #pragma once
 #ifndef MAINFLE_H
 #define MAINFLE_H
-#include <Server/Components/Pawn/pawn.hpp>
+
+#include "sdk.hpp"
 #include <Server/Components/Pawn/Impl/pawn_natives.hpp>
+#include <Server/Components/Pawn/pawn.hpp>
 #include <Server/Components/Pawn/Impl/pawn_impl.hpp>
 
 #include "../lib/ntp/NTPClient.h"
@@ -10,34 +12,34 @@
 
 #include "natives.hpp"
 
-class OMPTime final : public IComponent, public PawnEventHandler, public PlayerConnectEventHandler
+class OMPTime final : public IComponent, public PawnEventHandler
 {
 public:
     PROVIDE_UID(0x55347878BAA3C18A);
 
     StringView componentName() const override;
 
-	SemanticVersion componentVersion() const override;
+    SemanticVersion componentVersion() const override;
 
-	void onLoad(ICore *c) override;
+    void onLoad(ICore *c) override;
 
-	void onInit(IComponentList *components) override;
+    void onInit(IComponentList *components) override;
 
-	void onAmxLoad(IPawnScript &script) override;
+    void onAmxLoad(IPawnScript &script) override;
 
-	void onAmxUnload(IPawnScript &script) override;
+    void onAmxUnload(IPawnScript &script) override;
 
-	void onTick(Microseconds elapsed, TimePoint now);
+    void onTick(Microseconds elapsed, TimePoint now);
 
-	void onFree(IComponent *component) override;
+    void onFree(IComponent *component) override;
 
-	void reset() override;
+    void reset() override;
 
-	void free() override;
+    void free() override;
 
-	static ICore *&getCore();
+    static ICore *&getCore();
 
-	static OMPTime *&get();
+    static OMPTime *&get();
 
     ~OMPTime()
     {
@@ -45,14 +47,10 @@ public:
         {
             pawnComponent->getEventDispatcher().removeEventHandler(this);
         }
-        if (core)
-        {
-            core->getPlayers().getPlayerConnectDispatcher().removeEventHandler(this);
-        }
     }
 
 private:
-	ICore *core{};
-	IPawnComponent *pawnComponent{};
+    ICore *core{};
+    IPawnComponent *pawnComponent{};
 };
 #endif
