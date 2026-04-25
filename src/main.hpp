@@ -12,7 +12,7 @@
 
 #include "natives.hpp"
 
-class OMPTime final : public IComponent, public PawnEventHandler
+class OMPTime final : public IComponent, public PawnEventHandler, public CoreEventHandler
 {
 public:
     PROVIDE_UID(0x55347878BAA3C18A);
@@ -29,7 +29,7 @@ public:
 
     void onAmxUnload(IPawnScript &script) override;
 
-    void onTick(Microseconds elapsed, TimePoint now);
+    void onTick(Microseconds elapsed, TimePoint now) override;
 
     void onFree(IComponent *component) override;
 
