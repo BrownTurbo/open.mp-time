@@ -8,8 +8,6 @@
 #include <string>
 #include <memory>
 
-#include "./main.hpp"
-
 #include "../lib/ntp/NTPClient.h"
 #include "../lib/ntp/UDP/UDP.h"
 

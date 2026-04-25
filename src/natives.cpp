@@ -1,5 +1,7 @@
 #include "natives.hpp"
 
+#include "./main.hpp"
+
 bool ClientInitialised = false;
 std::unique_ptr<UDPSocket> udpSocket;
 std::unique_ptr<NTPClient> ntpClient;
