@@ -255,6 +255,15 @@ void NTPClient::setPoolServerName(const char* poolServerName) {
     this->_poolServerName = poolServerName;
 }
 
+void NTPClient::setPoolServerIP(IPAddress poolServerIP) {
+    this->_poolServerIP = poolServerIP;
+}
+
+void NTPClient::setPoolServerPort(unsigned int port)
+{
+  this->_port = port;
+}
+
 void NTPClient::sendNTPPacket() {
   // set all bytes in the buffer to 0
   memset(this->_packetBuffer, 0, NTP_PACKET_SIZE);
