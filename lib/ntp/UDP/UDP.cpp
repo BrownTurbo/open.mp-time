@@ -1,5 +1,6 @@
 #include "./UDP.h"
 #include <cstring>
+#include <iostream>
 
 static int winsockRefCount = 0;
 
@@ -67,7 +68,12 @@ int UDPSocket::beginPacket(const char* host, uint16_t port) {
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_DGRAM;
 
-    if (getaddrinfo(host, nullptr, &hints, &res) != 0) return 0;
+    int err = getaddrinfo(host, nullptr, &hints, &res);
+    if (err != 0 || res == nullptr)
+    {
+        std::cerr << "DNS lookup failed for " << host << ": " << gai_strerror(err) << std::endl;
+        return false;
+    }
 
     memcpy(&_remoteAddr, res->ai_addr, sizeof(struct sockaddr_in));
     _remoteAddr.sin_port = htons(port);
@@ -89,7 +95,11 @@ int UDPSocket::beginPacket(uint32_t rawip, uint16_t port) {
         return 0;
     }
 
-    if (getaddrinfo(host, nullptr, &hints, &res) != 0) return 0;
+    int err = getaddrinfo(host, nullptr, &hints, &res);
+    if (err != 0 || res == nullptr) {
+        std::cerr << "DNS lookup failed for " << host << ": " << gai_strerror(err) << std::endl;
+        return 0;
+    }
 
     memcpy(&_remoteAddr, res->ai_addr, sizeof(struct sockaddr_in));
     _remoteAddr.sin_port = htons(port);

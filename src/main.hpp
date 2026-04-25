@@ -12,6 +12,50 @@
 
 #include "natives.hpp"
 
+#include <iostream>
+#include <sstream>
+#include <streambuf>
+#include <string>
+#include <mutex>
+
+// Core Logging
+class CoreLogStreambuf : public std::streambuf
+{
+public:
+    CoreLogStreambuf(ICore *core, LogLevel level)
+        : core_(core), level_(level) {}
+
+protected:
+    int overflow(int ch) override
+    {
+        if (ch == traits_type::eof())
+            return !traits_type::eof();
+        buffer_ += static_cast<char>(ch);
+        if (ch == '\n')
+            sync();
+        return ch;
+    }
+
+    int sync() override
+    {
+        if (!buffer_.empty() && core_)
+        {
+            // remove trailing newline
+            if (buffer_.back() == '\n')
+                buffer_.pop_back();
+            core_->logLn(level_, "%.*s", static_cast<int>(buffer_.size()), buffer_.data());
+            buffer_.clear();
+        }
+        return 0;
+    }
+
+private:
+    ICore *core_;
+    LogLevel level_;
+    std::string buffer_;
+};
+
+// The main component class
 class OMPTime final : public IComponent, public PawnEventHandler, public CoreEventHandler
 {
 public:
@@ -41,12 +85,22 @@ public:
 
     static OMPTime *&get();
 
+    private:
+        std::streambuf * oldCout = nullptr;
+        std::streambuf * oldCerr = nullptr;
+        std::streambuf * oldClog = nullptr;
+
     ~OMPTime()
     {
         if (pawnComponent)
         {
             pawnComponent->getEventDispatcher().removeEventHandler(this);
         }
+
+        // Restore streams
+        if (oldCerr) std::cerr.rdbuf(oldCerr);
+        if (oldClog) std::clog.rdbuf(oldClog);
+        if (oldCout) std::cout.rdbuf(oldCout);
     }
 
 private:

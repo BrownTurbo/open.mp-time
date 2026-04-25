@@ -169,6 +169,11 @@ SCRIPT_API(NTP_Init, int(const std::string &NTPserver, int port))
 
     // Create UDP socket and NTP client
     udpSocket = std::make_unique<UDPSocket>();
+    if (!udpSocket->begin(1337))
+    {
+        core->logLn(LogLevel::Error, "NTP plugin: failed to bind UDP socket on port 1337");
+        return 0;
+    }
     udpSocket->setNonBlocking(true);
     udpSocket->setTimeout(500);
 

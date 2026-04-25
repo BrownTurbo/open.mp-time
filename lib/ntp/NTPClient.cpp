@@ -286,10 +286,16 @@ void NTPClient::sendNTPPacket() {
 
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
+  bool ok = false;
   if  (this->_poolServerName) {
     this->_udp->beginPacket(this->_poolServerName, this->_NTPport);
   } else {
     this->_udp->beginPacket(this->_poolServerIP, this->_NTPport);
+  }
+  if (!ok)
+  {
+    // Log error (again, need core pointer)
+    return;
   }
   this->_udp->write(this->_packetBuffer, NTP_PACKET_SIZE);
 }

@@ -13,6 +13,18 @@ SemanticVersion OMPTime::componentVersion() const
 void OMPTime::onLoad(ICore* c)
 {
     getCore() = core = c;
+
+    // Redirect std::cerr -> Error
+    static CoreLogStreambuf cerrBuf(core, LogLevel::Error);
+    oldCerr = std::cerr.rdbuf(&cerrBuf);
+
+    // Redirect std::clog -> Debug
+    static CoreLogStreambuf clogBuf(core, LogLevel::Debug);
+    oldClog = std::clog.rdbuf(&clogBuf);
+
+    // Redirect std::cout -> Info
+    static CoreLogStreambuf coutBuf(core, LogLevel::Message);
+    oldCout = std::cout.rdbuf(&coutBuf);
 }
 
 void OMPTime::onInit(IComponentList* components)
