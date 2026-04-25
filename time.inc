@@ -696,3 +696,10 @@ new TimeZoneOffset[MAX_TIMEZONE][E_TIMEZONE_OFFSET] = {
     {"US/Pacific", 61200},
     {"UTC", 0}
 };
+
+native NTP_Init(const server[] = "pool.ntp.org", port = 123);
+native NTP_Update();
+native NTP_ForceUpdate();
+native NTP_IsSynced();
+native NTP_GetTime(&hour, &minute, &second);
+native NTP_SetOffset(offset);
