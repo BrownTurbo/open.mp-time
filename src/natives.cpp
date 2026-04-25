@@ -175,9 +175,9 @@ SCRIPT_API(NTP_Init, int(const std::string &NTPserver, int port))
         return 0;
     }
     udpSocket->setNonBlocking(true);
-    udpSocket->setTimeout(1);
+    udpSocket->setTimeout(500);
 
-    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str());
+    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str(), port);
     ntpClient->begin();
 
     core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", NTPserver.c_str(), port);

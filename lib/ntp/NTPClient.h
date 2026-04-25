@@ -48,6 +48,8 @@ class NTPClient {
 
     void          sendNTPPacket();
 
+    unsigned int NTPport = 123;
+
   public:
     NTPClient(UDP& udp);
     NTPClient(UDP& udp, long timeOffset);

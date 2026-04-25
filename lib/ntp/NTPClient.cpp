@@ -50,6 +50,59 @@ NTPClient::NTPClient(UDP& udp, IPAddress poolServerIP, long timeOffset, unsigned
   this->_updateInterval = updateInterval;
 }
 
+NTPClient::NTPClient(UDP& udp, IPAddress poolServerIP, unsigned int port, long timeOffset, unsigned long updateInterval)
+{
+  this->_udp            = &udp;
+  this->_timeOffset     = timeOffset;
+  this->_poolServerIP   = poolServerIP;
+  this->_poolServerName = NULL;
+  this->_updateInterval = updateInterval;
+  this->_NTPport        = port;
+}
+
+NTPClient::NTPClient(UDP &udp, const char* poolServerName, unsigned int port, long timeOffset, unsigned long updateInterval)
+{
+  this->_udp = &udp;
+  this->_timeOffset = timeOffset;
+  this->_poolServerName = poolServerName;
+  this->_poolServerIP = 0;
+  this->_updateInterval = updateInterval;
+  this->_NTPport = port;
+}
+
+NTPClient::NTPClient(UDP &udp, const char *poolServerName, unsigned int port)
+{
+  this->_udp = &udp;
+  this->_poolServerName = poolServerName;
+  this->_poolServerIP = 0;
+  this->_NTPport = port;
+}
+
+NTPClient::NTPClient(UDP &udp, IPAddress poolServerIP, unsigned int port)
+{
+  this->_udp = &udp;
+  this->_poolServerIP = poolServerIP;
+  this->_poolServerName = NULL;
+  this->_NTPport = port;
+}
+
+NTPClient::NTPClient(UDP &udp, const char *poolServerName, unsigned int port, long timeOffset)
+{
+  this->_udp = &udp;
+  this->_timeOffset = timeOffset;
+  this->_poolServerName = poolServerName;
+  this->_NTPport = port;
+}
+
+NTPClient::NTPClient(UDP &udp, IPAddress poolServerIP, unsigned int port, long timeOffset)
+{
+  this->_udp = &udp;
+  this->_timeOffset = timeOffset;
+  this->_poolServerIP = poolServerIP;
+  this->_poolServerName = NULL;
+  this->_NTPport = port;
+}
+
 void NTPClient::begin() {
   this->begin(NTP_DEFAULT_LOCAL_PORT);
   this->_udp->setTimeout(100);
@@ -219,9 +272,9 @@ void NTPClient::sendNTPPacket() {
   // all NTP fields have been given values, now
   // you can send a packet requesting a timestamp:
   if  (this->_poolServerName) {
-    this->_udp->beginPacket(this->_poolServerName, this->_port);
+    this->_udp->beginPacket(this->_poolServerName, this->_NTPport);
   } else {
-    this->_udp->beginPacket(this->_poolServerIP, this->_port);
+    this->_udp->beginPacket(this->_poolServerIP, this->_NTPport);
   }
   this->_udp->write(this->_packetBuffer, NTP_PACKET_SIZE);
 }
