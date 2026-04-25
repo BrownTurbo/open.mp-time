@@ -1,4 +1,6 @@
 #pragma once
+#ifndef NTPCLIENT_H
+#define NTPCLIENT_H
 #include <cstdint>
 #include <cstdio>
 #include <iostream>
@@ -85,7 +87,7 @@ class NTPClient {
      * @return true on success, false on failure
      */
     bool update();
-    
+
     // ...
     void requestUpdate();
 
@@ -134,3 +136,4 @@ class NTPClient {
      */
     void end();
 };
+#endif

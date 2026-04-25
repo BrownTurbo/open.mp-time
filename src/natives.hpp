@@ -13,13 +13,10 @@
 #include "../lib/ntp/NTPClient.h"
 #include "../lib/ntp/UDP/UDP.h"
 
-#include <Server/Components/Pawn/pawn.hpp>
-#include <Server/Components/Pawn/Impl/pawn_natives.hpp>
-
 namespace chrono = std::chrono;
 
-bool ClientInitialised = false;
-std::unique_ptr<UDPSocket> udpSocket;
-std::unique_ptr<NTPClient> ntpClient;
+extern bool ClientInitialised;
+extern std::unique_ptr<UDPSocket> udpSocket;
+extern std::unique_ptr<NTPClient> ntpClient;
 
 #endif

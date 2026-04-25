@@ -3,7 +3,8 @@
 
 static int winsockRefCount = 0;
 
-void initSockets() {
+void UDPSocket::initSockets()
+{
     if (winsockRefCount++ == 0) {
 #ifdef _WIN32
         WSADATA wsaData;
@@ -12,7 +13,8 @@ void initSockets() {
     }
 }
 
-void cleanupSockets() {
+void UDPSocket::cleanupSockets()
+{
     if (--winsockRefCount == 0) {
 #ifdef _WIN32
         WSACleanup();

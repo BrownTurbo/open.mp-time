@@ -1,5 +1,9 @@
 #include "natives.hpp"
 
+bool ClientInitialised = false;
+std::unique_ptr<UDPSocket> udpSocket;
+std::unique_ptr<NTPClient> ntpClient;
+
 std::map<std::string, chrono::milliseconds> unitMap = {
     { "ms", chrono::milliseconds(1) },
     { "s", chrono::seconds(1) },
@@ -13,7 +17,7 @@ SCRIPT_API(Now, int())
     return static_cast<int>(std::chrono::seconds(std::time(NULL)).count());
 }
 
-SCRIPT_API(TimeFormat, int(int unix_timestamp, std::string fmt, cell* output, int outputSize))
+SCRIPT_API(TimeFormat, int(int unix_timestamp, const std::string& fmt, cell& output, int outputSize))
 {
     date::sys_seconds since_epoch(std::chrono::seconds{ unix_timestamp });
 
@@ -22,10 +26,11 @@ SCRIPT_API(TimeFormat, int(int unix_timestamp, std::string fmt, cell* output, in
 
     std::string result = os.str();
 
-    return amx_SetString(output, result.c_str(), 0, 0, outputSize);
+    return amx_SetString(&output, result.c_str(), 0, 0, outputSize);
 }
 
-SCRIPT_API(TimeParse, int(std::string string, std::string fmt, cell* output))
+SCRIPT_API(TimeParse, int(const std::string& string, const std::string& fmt, cell& output))
+
 {
     std::istringstream is(string);
     date::sys_seconds d;
@@ -43,12 +48,12 @@ SCRIPT_API(TimeParse, int(std::string string, std::string fmt, cell* output))
 		return 1;
 	}
 
-    *output = static_cast<cell>(d.time_since_epoch().count());
+    output = static_cast<cell>(d.time_since_epoch().count());
 
     return 0;
 }
 
-SCRIPT_API(DurationParse, int(std::string input, cell* output)) {
+SCRIPT_API(DurationParse, int(const std::string& input, cell& output)) {
     size_t idx = 0,
            length = input.length();
 
@@ -121,13 +126,14 @@ SCRIPT_API(DurationParse, int(std::string input, cell* output)) {
         unit = std::string();
     }
 
-    *output = resultDuration;
+    output = resultDuration;
 
     return 0;
 }
 
 // native NTP_Init(const server[] = "pool.ntp.org", port = 123);
-SCRIPT_API(NTP_Init, int(char* server, unsigned int port)) {
+SCRIPT_API(NTP_Init, int(const std::string& NTPserver, int port))
+{
     ICore *core = OMPTime::getCore();
     if (!core)
     {
@@ -140,18 +146,18 @@ SCRIPT_API(NTP_Init, int(char* server, unsigned int port)) {
     }
 
     // Create UDP socket and NTP client
-    initSockets();
     udpSocket = std::make_unique<UDPSocket>();
+    udpSocket->initSockets();
     if (!udpSocket->begin(0)) {   // bind to any free port
         core->logLn(LogLevel::Debug, "NTP plugin: UDP socket creation failed.");
         return 0;
     }
     udpSocket->setTimeout(100);   // 100 ms recv timeout
 
-    ntpClient = std::make_unique<NTPClient>(*udpSocket, server);
+    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str());
     ntpClient->begin();
 
-    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", server, port);
+    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", NTPserver.c_str(), port);
     ClientInitialised = true;
     return 1;
 }

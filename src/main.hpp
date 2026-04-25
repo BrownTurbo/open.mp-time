@@ -1,4 +1,6 @@
 #pragma once
+#ifndef MAINFLE_H
+#define MAINFLE_H
 #include <Server/Components/Pawn/pawn.hpp>
 #include <Server/Components/Pawn/Impl/pawn_natives.hpp>
 #include <Server/Components/Pawn/Impl/pawn_impl.hpp>
@@ -53,3 +55,4 @@ private:
 	ICore *core{};
 	IPawnComponent *pawnComponent{};
 };
+#endif

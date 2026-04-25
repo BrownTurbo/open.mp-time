@@ -70,7 +70,6 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-sdk)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/omp-sdk/include)
 target_link_libraries(OMP-SDK INTERFACE
     AMX
-    pawn-natives
 )
 
 file(GLOB NTP_SRC "${CMAKE_SOURCE_DIR}/lib/ntp/*.cpp")
@@ -87,7 +86,7 @@ endif()
 target_link_libraries(omp-time PRIVATE
 	OMP-SDK
 	NTP
-	AMX
+    pawn-natives
 )
 
 target_compile_definitions(omp-time PRIVATE
