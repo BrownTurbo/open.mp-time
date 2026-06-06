@@ -1,7 +1,9 @@
 cmake_minimum_required(VERSION 3.19)
 set(CMAKE_CXX_STANDARD 17)
 
-set(VCPKG_TARGET_TRIPLET "x86-windows")
+if(NOT DEFINED UNIX)
+    set(VCPKG_TARGET_TRIPLET "x86-windows")
+endif()
 
 project(omp-time LANGUAGES C CXX VERSION 1.1.2)
 
@@ -97,10 +99,12 @@ target_compile_definitions(omp-time PRIVATE
     PAWN_CELL_SIZE=64
 )
 
-if(DEFINED CMAKE_CXX_COMPILER_ID)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
-elseif(DEFINED CMAKE_C_COMPILER_ID)
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
+if(NOT DEFINED UNIX)
+    if(DEFINED CMAKE_CXX_COMPILER_ID)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
+    elseif(DEFINED CMAKE_C_COMPILER_ID)
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
+    endif()
 endif()
 
 # no idea why this is necessary...
