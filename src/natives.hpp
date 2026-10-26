@@ -10,6 +10,7 @@
 
 #include "../lib/ntp/NTPClient.h"
 #include "../lib/ntp/UDP/UDP.h"
+#include "timezone.hpp"
 
 #include <Server/Components/Pawn/Impl/pawn_natives.hpp>
 

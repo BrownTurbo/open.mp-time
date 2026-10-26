@@ -702,4 +702,10 @@ native NTP_Update();
 native NTP_ForceUpdate();
 native NTP_IsSynced();
 native NTP_GetTime(&hour, &minute, &second);
+native Timestamp:NTP_GetTimestamp();
+#define NTP_GetEpochTime NTP_GetTimestamp
+native NTP_SetServer(const server[], port = 123);
+native NTP_SetUpdateInterval(interval_ms);
 native NTP_SetOffset(offset);
+
+native GetTimezoneOffset(const timezone[], Timestamp:timestamp = Timestamp:0);

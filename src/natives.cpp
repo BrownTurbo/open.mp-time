@@ -19,14 +19,35 @@ SCRIPT_API(Now, int())
 
 SCRIPT_API(TimeFormat, int(int unix_timestamp, const std::string &fmt, cell &output, int outputSize))
 {
-    date::sys_seconds since_epoch(std::chrono::seconds{unix_timestamp});
+    if (outputSize <= 0)
+    {
+        return 1;
+    }
 
-    std::ostringstream os;
-    date::to_stream(os, fmt.c_str(), since_epoch);
+    try
+    {
+        date::sys_seconds since_epoch(std::chrono::seconds{unix_timestamp});
 
-    std::string result = os.str();
+        std::ostringstream os;
+        date::to_stream(os, fmt.c_str(), since_epoch);
 
-    return amx_SetString(&output, result.c_str(), 0, 0, outputSize);
+        std::string result = os.str();
+
+        return amx_SetString(&output, result.c_str(), 0, 0, outputSize);
+    }
+    catch (const std::exception &e)
+    {
+        ICore *core = OMPTime::getCore();
+        if (core)
+        {
+            core->logLn(LogLevel::Error, "ERROR: date::to_stream failed: %s", e.what());
+        }
+        return 1;
+    }
+    catch (...)
+    {
+        return 1;
+    }
 }
 
 SCRIPT_API(TimeParse, int(const std::string &string, const std::string &fmt, cell &output))
@@ -62,6 +83,11 @@ SCRIPT_API(DurationParse, int(const std::string &input, cell &output))
     size_t idx = 0,
            length = input.length();
 
+    if (length == 0)
+    {
+        return 1;
+    }
+
     bool negative = false;
     if (input[idx] == '-')
     {
@@ -74,14 +100,19 @@ SCRIPT_API(DurationParse, int(const std::string &input, cell &output))
         idx++;
     }
 
+    if (idx >= length)
+    {
+        return 1;
+    }
+
     // The next character must be [0-9.]
-    if (!(input[idx] == '.' || '0' <= input[idx] && input[idx] <= '9'))
+    if (!(input[idx] == '.' || ('0' <= input[idx] && input[idx] <= '9')))
     {
         return 1;
     }
 
     int numberBegin = -1,
-        value;
+        value = 0;
 
     bool gotValue = false,
          gotUnit = false;
@@ -95,36 +126,40 @@ SCRIPT_API(DurationParse, int(const std::string &input, cell &output))
         {
             if (numberBegin == -1)
             {
-                numberBegin = idx;
-
+                numberBegin = static_cast<int>(idx);
                 idx++;
                 continue;
             }
             else
             {
-                if (!('0' <= input[idx] && input[idx] <= '9'))
+                if (idx < length && ('0' <= input[idx] && input[idx] <= '9'))
                 {
-                    gotValue = true;
-                    value = std::stoi(input.substr(numberBegin, idx - numberBegin));
-                    numberBegin = -1;
-
+                    idx++;
                     continue;
                 }
 
-                idx++;
+                gotValue = true;
+                try
+                {
+                    value = std::stoi(input.substr(numberBegin, idx - numberBegin));
+                }
+                catch (...)
+                {
+                    return 1;
+                }
+                numberBegin = -1;
                 continue;
             }
         }
         if (!gotUnit)
         {
-            if (input[idx] == 0 || !('a' <= input[idx] && input[idx] <= 'z'))
+            if (idx == length || input[idx] == 0 || !('a' <= input[idx] && input[idx] <= 'z'))
             {
                 gotUnit = true;
                 continue;
             }
 
             unit.push_back(input[idx]);
-
             idx++;
             continue;
         }
@@ -135,17 +170,17 @@ SCRIPT_API(DurationParse, int(const std::string &input, cell &output))
         }
         resultDuration += static_cast<int>(value * unitMap.at(unit).count());
 
-        if (input[idx] == 0)
+        if (idx >= length || input[idx] == 0)
         {
             break;
         }
 
         gotValue = false;
         gotUnit = false;
-        unit = std::string();
+        unit.clear();
     }
 
-    output = resultDuration;
+    output = negative ? -resultDuration : resultDuration;
 
     return 0;
 }
@@ -158,9 +193,15 @@ SCRIPT_API(NTP_Init, int(const std::string &NTPserver, int port))
     {
         return 0;
     }
-    if (ClientInitialised)
+
+    std::string serverName = NTPserver.empty() ? "pool.ntp.org" : NTPserver;
+
+    if (ClientInitialised && ntpClient)
     {
-        core->logLn(LogLevel::Debug, "NTP plugin: already initialised.");
+        ntpClient->setPoolServerName(serverName);
+        ntpClient->setPoolServerPort(static_cast<unsigned int>(port));
+        ntpClient->requestUpdate();
+        core->logLn(LogLevel::Debug, "NTP plugin: re-initialised with server %s:%d", serverName.c_str(), port);
         return 1;
     }
 
@@ -169,18 +210,17 @@ SCRIPT_API(NTP_Init, int(const std::string &NTPserver, int port))
 
     // Create UDP socket and NTP client
     udpSocket = std::make_unique<UDPSocket>();
-    if (!udpSocket->begin(1337))
+    if (!udpSocket->begin(0))
     {
-        core->logLn(LogLevel::Error, "NTP plugin: failed to bind UDP socket on port 1337");
+        core->logLn(LogLevel::Error, "NTP plugin: failed to bind UDP socket");
         return 0;
     }
     udpSocket->setNonBlocking(true);
-    udpSocket->setTimeout(500);
 
-    ntpClient = std::make_unique<NTPClient>(*udpSocket, NTPserver.c_str(), static_cast<unsigned int>(port));
+    ntpClient = std::make_unique<NTPClient>(*udpSocket, serverName.c_str(), static_cast<unsigned int>(port));
     ntpClient->begin();
 
-    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", NTPserver.c_str(), port);
+    core->logLn(LogLevel::Debug, "NTP plugin: initialised with server %s:%d", serverName.c_str(), port);
     ClientInitialised = true;
     return 1;
 }
@@ -224,6 +264,50 @@ SCRIPT_API(NTP_GetTime, bool(int &hour, int &minute, int &second))
     return 1;
 }
 
+// native Timestamp:NTP_GetTimestamp();
+SCRIPT_API(NTP_GetTimestamp, int())
+{
+    if (!ClientInitialised || !ntpClient || !ntpClient->isTimeSet())
+    {
+        return 0;
+    }
+
+    return static_cast<int>(ntpClient->getEpochTime());
+}
+
+// native NTP_SetServer(const server[], port = 123);
+SCRIPT_API(NTP_SetServer, bool(const std::string &server, int port))
+{
+    if (!ClientInitialised || !ntpClient)
+    {
+        return 0;
+    }
+
+    std::string serverName = server.empty() ? "pool.ntp.org" : server;
+    ntpClient->setPoolServerName(serverName);
+    ntpClient->setPoolServerPort(static_cast<unsigned int>(port));
+    ntpClient->requestUpdate();
+
+    ICore *core = OMPTime::getCore();
+    if (core)
+    {
+        core->logLn(LogLevel::Debug, "NTP plugin: server changed to %s:%d", serverName.c_str(), port);
+    }
+    return 1;
+}
+
+// native NTP_SetUpdateInterval(interval_ms);
+SCRIPT_API(NTP_SetUpdateInterval, bool(int interval_ms))
+{
+    if (!ClientInitialised || !ntpClient || interval_ms <= 0)
+    {
+        return 0;
+    }
+
+    ntpClient->setUpdateInterval(static_cast<unsigned long>(interval_ms));
+    return 1;
+}
+
 // native NTP_SetOffset(offset);
 SCRIPT_API(NTP_SetOffset, bool(int offset))
 {
@@ -231,4 +315,10 @@ SCRIPT_API(NTP_SetOffset, bool(int offset))
         return 0;
     ntpClient->setTimeOffset(offset);
     return 1;
+}
+
+// native GetTimezoneOffset(const timezone[], Timestamp:timestamp = Timestamp:0);
+SCRIPT_API(GetTimezoneOffset, int(const std::string &timezone, int timestamp))
+{
+    return GetTimezoneOffsetSeconds(timezone, static_cast<std::time_t>(timestamp));
 }

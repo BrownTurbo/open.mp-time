@@ -5,7 +5,17 @@ if(NOT DEFINED UNIX)
     set(VCPKG_TARGET_TRIPLET "x86-windows")
 endif()
 
-project(omp-time LANGUAGES C CXX VERSION 1.1.2)
+#==============================================================================#
+set(PLUGIN_NAME "omp-time")
+set(PLUGIN_VERSION_MAJOR 1)
+set(PLUGIN_VERSION_MINOR 1)
+set(PLUGIN_VERSION_PATCH 3)
+set(PLUGIN_VERSION_BUILD 1)
+#==============================================================================#
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
+
+project(${PLUGIN_NAME} LANGUAGES C CXX VERSION ${PLUGIN_VERSION_MAJOR}.${PLUGIN_VERSION_MINOR}.${PLUGIN_VERSION_PATCH}.${PLUGIN_VERSION_BUILD})
 
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS OFF)
 set_property(GLOBAL PROPERTY FIND_LIBRARY_USE_LIB32_PATHS ON)
@@ -101,9 +111,9 @@ target_compile_definitions(omp-time PRIVATE
 
 if(NOT DEFINED UNIX)
     if(DEFINED CMAKE_CXX_COMPILER_ID)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W0 /Wv:18")
     elseif(DEFINED CMAKE_C_COMPILER_ID)
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W0 /Wv:18 /p:VcpkgEnableManifest=true")
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W0 /Wv:18")
     endif()
 endif()
 
@@ -114,4 +124,27 @@ if(UNIX)
 elseif(WIN32)
 	set(ENABLE_DATE_TESTING OFF)
 	set(USE_SYSTEM_TZ_DB ON)
+endif()
+
+if(WIN32)
+    target_compile_options(${PLUGIN_NAME} PRIVATE /p:VcpkgEnableManifest=true)
+endif()
+
+configure_file("${CMAKE_SOURCE_DIR}/pluginconfig.h.in" "${CMAKE_SOURCE_DIR}/pluginconfig.h")
+
+if(DEFINED WIN32)
+    if (CMAKE_BUILD_TYPE STREQUAL "Debug" OR CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR BUILD_TESTING)
+        set(DLL_TRGT "${CMAKE_SOURCE_DIR}/vcpkg_installed/x86-windows/debug/bin")
+    else()
+        set(DLL_TRGT "${CMAKE_SOURCE_DIR}/vcpkg_installed/x86-windows/bin")
+    endif()
+    add_custom_command(TARGET ${PLUGIN_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND}
+            "-DTRGT=${DLL_TRGT}"
+            "-DDEST=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+            -P "${CMAKE_SOURCE_DIR}/CopyRuntimeDlls.cmake"
+        COMMAND_EXPAND_LISTS
+        VERBATIM
+        COMMENT "Resolving and copying runtime DLL dependencies for ${PLUGIN_NAME}..."
+    )
 endif()

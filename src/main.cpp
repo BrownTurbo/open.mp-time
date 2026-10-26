@@ -1,5 +1,7 @@
 #include "./main.hpp"
 
+#include "../pluginconfig.h"
+
 StringView OMPTime::componentName() const
 {
     return "OMP-Time";
@@ -7,7 +9,7 @@ StringView OMPTime::componentName() const
 
 SemanticVersion OMPTime::componentVersion() const
 {
-    return SemanticVersion(1, 1, 2, 0);
+    return SemanticVersion(PLUGIN_VERSION_MAJOR, PLUGIN_VERSION_MINOR, PLUGIN_VERSION_PATCH, PLUGIN_VERSION_BUILD);
 }
 
 void OMPTime::onLoad(ICore* c)
@@ -45,6 +47,7 @@ void OMPTime::onInit(IComponentList* components)
     setAmxFunctions(pawnComponent->getAmxFunctions());
     setAmxLookups(components);
     pawnComponent->getEventDispatcher().addEventHandler(this);
+    core->getEventDispatcher().addEventHandler(this);
 }
 
 void OMPTime::onAmxLoad(IPawnScript& script)
@@ -61,7 +64,6 @@ void OMPTime::onAmxUnload(IPawnScript& script)
     if (udpSocket)
     {
         udpSocket->stop();
-        udpSocket->cleanupSockets();
     }
     ClientInitialised = false;
 }
@@ -86,6 +88,9 @@ void OMPTime::onTick(Microseconds elapsed, TimePoint now)
 
 void OMPTime::free()
 {
+    if (core != nullptr)
+        core->getEventDispatcher().removeEventHandler(this);
+
     if (pawnComponent != nullptr)
         pawnComponent->getEventDispatcher().removeEventHandler(this);
 

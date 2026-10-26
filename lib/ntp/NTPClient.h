@@ -29,8 +29,9 @@ class NTPClient {
     UDP*          _udp;
     bool          _udpSetup       = false;
 
-    const char*   _poolServerName = "pool.ntp.org"; // Default time server
-    IPAddress     _poolServerIP;
+    std::string   _poolServerName = "pool.ntp.org"; // Default time server
+    IPAddress     _poolServerIP   = 0;
+    bool          _useIP          = false;
     unsigned int  _port           = NTP_DEFAULT_LOCAL_PORT;
     long          _timeOffset     = 0;
 
@@ -46,7 +47,7 @@ class NTPClient {
 
     uint8_t       _packetBuffer[NTP_PACKET_SIZE];
 
-    void          sendNTPPacket();
+    bool          sendNTPPacket();
 
     unsigned int _NTPport = 123;
 
@@ -119,6 +120,7 @@ class NTPClient {
 
     // ...
     void setPoolServerName(const char *poolServerName);
+    void setPoolServerName(const std::string &poolServerName);
     void setPoolServerIP(IPAddress poolServerIP);
     void setPoolServerPort(unsigned int port);
     void setTimeOffset(int timeOffset);

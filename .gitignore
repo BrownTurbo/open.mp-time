@@ -53,3 +53,5 @@ build/
 vcpkg_installed/
 .idea/
 ~.tst/
+bin/
+pluginconfig.h

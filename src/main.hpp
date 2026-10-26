@@ -92,6 +92,10 @@ public:
 
     ~OMPTime()
     {
+        if (core)
+        {
+            core->getEventDispatcher().removeEventHandler(this);
+        }
         if (pawnComponent)
         {
             pawnComponent->getEventDispatcher().removeEventHandler(this);

@@ -47,6 +47,8 @@ public:
     void flush();
 
     void setNonBlocking(bool enable);
-	void setTimeout(int milliseconds);
+    bool isNonBlocking() const { return _isNonBlocking; }
+    bool isBound() const { return _socket != INVALID_SOCKET; }
+    void setTimeout(int milliseconds);
 };
 #endif
